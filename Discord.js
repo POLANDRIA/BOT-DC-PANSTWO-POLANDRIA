@@ -1,38 +1,53 @@
-const { Client, GatewayIntentBits } = require("discord.js");
+client.on(Events.InteractionCreate, async (interaction) => {
 
-const client = new Client({
-  intents: [
-    GatewayIntentBits.Guilds,
-    GatewayIntentBits.GuildMessages,
-    GatewayIntentBits.MessageContent,
-    GatewayIntentBits.GuildMembers
-  ]
-});
+  // klik button
+  if (interaction.isButton()) {
+    if (interaction.customId === "verify_btn") {
 
-// TWÓJ PIN
-const PIN = "9873";
+      const modal = new ModalBuilder()
+        .setCustomId("verify_modal")
+        .setTitle("Weryfikacja PIN");
 
-// ID roli którą dajesz
-const ROLE_ID = "1522900074739273868";
+      const input = new TextInputBuilder()
+        .setCustomId("pin")
+        .setLabel("Wpisz PIN")
+        .setStyle(TextInputStyle.Short);
 
-client.on("messageCreate", async (message) => {
-  if (message.author.bot) return;
+      const row = new ActionRowBuilder().addComponents(input);
+      modal.addComponents(row);
 
-  if (message.content.startsWith("!verify")) {
-    const args = message.content.split(" ");
-    const code = args[1];
+      return interaction.showModal(modal);
+    }
+  }
 
-    if (code === PIN) {
-      const role = message.guild.roles.cache.get(ROLE_ID);
+  // submit PIN
+  if (interaction.isModalSubmit()) {
+    if (interaction.customId === "verify_modal") {
 
-      if (!role) return message.reply("Nie ma takiej roli.");
+      const code = interaction.fields.getTextInputValue("pin");
 
-      await message.member.roles.add(role);
-      message.reply("✔️ Dostęp przyznany.");
-    } else {
-      message.reply("❌ Zły PIN.");
+      if (code !== PIN) {
+        return interaction.reply({
+          content: "❌ Zły PIN",
+          ephemeral: true
+        });
+      }
+
+      const role = interaction.guild.roles.cache.get(ROLE_ID);
+
+      if (!role) {
+        return interaction.reply({
+          content: "❌ Nie ma takiej roli",
+          ephemeral: true
+        });
+      }
+
+      await interaction.member.roles.add(role);
+
+      return interaction.reply({
+        content: "✔️ Masz rolę: Obywatel Polandrii",
+        ephemeral: true
+      });
     }
   }
 });
-
-client.login(process.env.TOKEN);
