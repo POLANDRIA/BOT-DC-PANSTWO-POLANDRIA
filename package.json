@@ -1,0 +1,12 @@
+{
+  "name": "polandria-bot",
+  "version": "1.0.0",
+  "main": "Discord.js",
+  "type": "commonjs",
+  "scripts": {
+    "start": "node Discord.js"
+  },
+  "dependencies": {
+    "discord.js": "^14.0.0"
+  }
+}
