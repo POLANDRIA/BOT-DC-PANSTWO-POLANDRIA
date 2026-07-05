@@ -1,5 +1,6 @@
-const { 
-  Client, GatewayIntentBits,
+const {
+  Client,
+  GatewayIntentBits,
   EmbedBuilder,
   ActionRowBuilder,
   ButtonBuilder,
@@ -9,6 +10,13 @@ const {
   TextInputStyle,
   Events
 } = require("discord.js");
+
+const express = require("express");
+const app = express();
+
+// 🔥 FIX RENDER (PORT)
+app.get("/", (req, res) => res.send("Bot działa"));
+app.listen(process.env.PORT || 3000);
 
 const client = new Client({
   intents: [
@@ -22,30 +30,35 @@ const client = new Client({
 // 🔐 KONFIG
 const PIN = "9873";
 const ROLE_ID = "1522900074739273868";
-const CHANNEL_ID = "1522724445712547880"; // <-- tu wpisz kanał
+const CHANNEL_ID = "1522724445712547880";
 
-// 📢 EMBED + BUTTON
 client.once("ready", async () => {
   console.log(`Zalogowano jako ${client.user.tag}`);
 
-  const channel = await client.channels.fetch(CHANNEL_ID);
+  try {
+    const channel = await client.channels.fetch(CHANNEL_ID);
 
-  const embed = new EmbedBuilder()
-    .setTitle("🇵🇱 Weryfikacja Polandria")
-    .setDescription("Kliknij przycisk i wpisz PIN, aby dostać rolę **Obywatel Polandrii**.")
-    .setColor(0x2ecc71);
+    if (!channel) return console.log("❌ Nie znaleziono kanału");
 
-  const row = new ActionRowBuilder().addComponents(
-    new ButtonBuilder()
-      .setCustomId("verify_btn")
-      .setLabel("Weryfikuj")
-      .setStyle(ButtonStyle.Primary)
-  );
+    const embed = new EmbedBuilder()
+      .setTitle("🇵🇱 Weryfikacja Polandria")
+      .setDescription("Kliknij przycisk i wpisz PIN, aby dostać rolę **Obywatel Polandrii**.")
+      .setColor(0x2ecc71);
 
-  channel.send({ embeds: [embed], components: [row] });
+    const row = new ActionRowBuilder().addComponents(
+      new ButtonBuilder()
+        .setCustomId("verify_btn")
+        .setLabel("Weryfikuj")
+        .setStyle(ButtonStyle.Primary)
+    );
+
+    await channel.send({ embeds: [embed], components: [row] });
+
+  } catch (err) {
+    console.log("❌ Błąd kanału:", err);
+  }
 });
 
-// 🧠 INTERAKCJE
 client.on(Events.InteractionCreate, async (interaction) => {
 
   // BUTTON
@@ -69,7 +82,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
     }
   }
 
-  // MODAL (PIN CHECK)
+  // MODAL
   if (interaction.isModalSubmit()) {
     if (interaction.customId === "verify_modal") {
 
@@ -91,12 +104,19 @@ client.on(Events.InteractionCreate, async (interaction) => {
         });
       }
 
-      await interaction.member.roles.add(role);
+      try {
+        await interaction.member.roles.add(role);
 
-      return interaction.reply({
-        content: "✔️ Dostęp przyznany! Masz rolę Obywatel Polandrii",
-        ephemeral: true
-      });
+        return interaction.reply({
+          content: "✔️ Masz dostęp! Nadano rolę Obywatel Polandrii",
+          ephemeral: true
+        });
+      } catch (err) {
+        return interaction.reply({
+          content: "❌ Nie mogę nadać roli (brak permisji)",
+          ephemeral: true
+        });
+      }
     }
   }
 });
